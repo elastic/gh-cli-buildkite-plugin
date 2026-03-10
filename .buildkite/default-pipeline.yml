@@ -3,7 +3,8 @@
 steps:
   - label: ":github: Trigger E2E Tests (no wait)"
     plugins:
-      - elastic/gh-cli#main:
+      - elastic/vault-github-token#v0.1.0:
+      - elastic/gh-cli#${BUILDKITE_COMMIT}:
           version: "2.62.0"
           workflow-file: "e2e-test.yml"
           workflow-ref: "main"
@@ -15,7 +16,8 @@ steps:
 
   - label: ":github: Trigger E2E Tests (wait)"
     plugins:
-      - elastic/gh-cli#main:
+      - elastic/vault-github-token#v0.1.0:
+      - elastic/gh-cli#${BUILDKITE_COMMIT}:
           version: "2.62.0"
           workflow-file: "e2e-test.yml"
           workflow-ref: "main"
@@ -29,11 +31,17 @@ steps:
   - label: ":test_tube: Run Plugin Unit Tests"
     commands:
       - make test
+    agents:
+      provider: gcp
 
   - label: ":mag: Run ShellCheck"
     commands:
       - make shellcheck
+    agents:
+      provider: gcp
 
   - label: ":lint-roller: Run Plugin Linter"
     commands:
       - make plugin-lint
+    agents:
+      provider: gcp

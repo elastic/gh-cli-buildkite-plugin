@@ -1,5 +1,7 @@
 # GitHub CLI Buildkite Plugin
 
+[![usages](https://img.shields.io/badge/usages-white?logo=buildkite&logoColor=blue)](https://github.com/search?q=elastic%2Fgh-cli+%28path%3A.buildkite%29&type=code)
+
 A Buildkite plugin for installing the GitHub CLI (`gh`) and optionally running GitHub workflows from your Buildkite pipeline.
 
 ## Features
