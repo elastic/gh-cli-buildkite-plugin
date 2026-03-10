@@ -1,0 +1,32 @@
+name: gh-cli
+description: Set up GitHub CLI (gh) and run GitHub workflows from your Buildkite pipeline
+author: https://github.com/elastic
+public: true
+requirements:
+  - curl
+  - bash
+  - tar
+  - git
+  - buildkite-agent
+configuration:
+  properties:
+    version:
+      type: string
+      description: The version of gh CLI to install (e.g., "2.62.0")
+    version-file:
+      type: string
+      description: The file to get the version from. Also supports .tool-versions
+    workflow-file:
+      type: string
+      description: The workflow file name or ID to run (e.g., "ci.yml" or workflow ID)
+    workflow-ref:
+      type: string
+      description: The git reference for the workflow (branch, tag, or SHA)
+    workflow-inputs:
+      type: object
+      description: Input parameters to pass to the workflow as key-value pairs
+    wait:
+      type: boolean
+      description: Whether to wait for the workflow to complete before proceeding
+      default: false
+  additionalProperties: false

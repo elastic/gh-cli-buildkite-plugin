@@ -1,14 +1,39 @@
 ---
 # $yaml-language-server: $schema=https://raw.githubusercontent.com/buildkite/pipeline-schema/main/schema.json
 steps:
-  - label: "Build"
-    command: "true"
+  - label: ":github: Trigger E2E Tests (no wait)"
+    plugins:
+      - elastic/gh-cli#main:
+          version: "2.62.0"
+          workflow-file: "e2e-test.yml"
+          workflow-ref: "main"
+          workflow-inputs:
+            environment: "staging"
+            test-suite: "all"
+            enable-debug: "true"
+            version: "1.0.0"
 
-  - label: "Test"
-    command: "true"
+  - label: ":github: Trigger E2E Tests (wait)"
+    plugins:
+      - elastic/gh-cli#main:
+          version: "2.62.0"
+          workflow-file: "e2e-test.yml"
+          workflow-ref: "main"
+          workflow-inputs:
+            environment: "staging"
+            test-suite: "all"
+            enable-debug: "true"
+            version: "1.0.0"
+          wait: true
 
-  - label: "Deploy"
-    command: "true"
+  - label: ":test_tube: Run Plugin Unit Tests"
+    commands:
+      - make test
 
-  - label: "Publish"
-    command: "true"
+  - label: ":mag: Run ShellCheck"
+    commands:
+      - make shellcheck
+
+  - label: ":lint-roller: Run Plugin Linter"
+    commands:
+      - make plugin-lint

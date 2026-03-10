@@ -1,0 +1,26 @@
+services:
+  plugin-lint:
+    image: buildkite/plugin-linter:v3.0.0
+    command: [ '--id', 'elastic/gh-cli', '--path', '/plugin' ]
+    volumes:
+      - ".:/plugin:ro,z"
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ".:/plugin:ro,z"
+    command: ['bats', 'tests/unit']
+
+  shellcheck:
+    image: koalaman/shellcheck-alpine:v0.11.0
+    entrypoint: ["sh", "-c"]
+    command: >
+      "
+      echo 'running shellcheck' ;
+      (find hooks lib -type f 2>/dev/null | xargs shellcheck --shell=bash --external-sources --color=always --format=gcc) && echo 'shellcheck passed' || (echo 'shellcheck failed' && exit 1);
+      "
+    working_dir: /plugin
+    volumes:
+      - ".:/plugin:ro,z"
