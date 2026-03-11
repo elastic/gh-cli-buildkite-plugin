@@ -25,11 +25,8 @@ fi
 
 echo "Installing gh CLI version: ${GH_VERSION}"
 
-# Install directory
-INSTALL_DIR="${HOME}/.gh-cli/bin"
-
 # Setup gh CLI
-setup "${GH_VERSION}" "${INSTALL_DIR}"
+setup "${GH_VERSION}" "${GH_CLI_BIN}"
 
 # Verify gh is available
 if ! command -v gh &> /dev/null; then
