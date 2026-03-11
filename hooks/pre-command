@@ -26,7 +26,7 @@ fi
 echo "Installing gh CLI version: ${GH_VERSION}"
 
 # Install directory
-INSTALL_DIR="${HOME}/.gh-cli/bin"
+INSTALL_DIR="${GH_CLI_BIN}"
 
 # Setup gh CLI
 setup "${GH_VERSION}" "${INSTALL_DIR}"
