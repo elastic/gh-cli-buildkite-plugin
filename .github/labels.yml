@@ -1,0 +1,35 @@
+- name: "changelog:breaking"
+  color: "d73a4a"
+  description: "When a breaking change is introduced"
+
+- name: "changelog:feature"
+  color: "0075ca"
+  description: "When a new feature is introduced"
+
+- name: "changelog:enhancement"
+  color: "a2eeef"
+  description: "When an existing feature is improved"
+
+- name: "changelog:fix"
+  color: "e4e669"
+  description: "When a bug is fixed"
+
+- name: "changelog:docs"
+  color: "0075ca"
+  description: "When documentation is updated"
+
+- name: "changelog:chore"
+  color: "e4e669"
+  description: "When a chore is done"
+
+- name: "changelog:ci"
+  color: "e4e669"
+  description: "When CI is updated"
+
+- name: "changelog:dependencies"
+  color: "0075ca"
+  description: "When dependencies are updated"
+
+- name: "changelog:skip"
+  color: "ffffff"
+  description: "When a PR should be excluded from the changelog"
