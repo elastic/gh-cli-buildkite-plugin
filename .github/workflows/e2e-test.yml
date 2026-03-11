@@ -43,31 +43,3 @@ jobs:
           echo "Version: ${{ inputs.version }}"
           echo "Triggered by: ${{ github.actor }}"
           echo "Ref: ${{ github.ref }}"
-
-      - name: Setup test environment
-        run: |
-          echo "Setting up test environment for ${{ inputs.environment }}"
-          # Add your setup commands here
-
-      - name: Run E2E tests
-        env:
-          DEBUG: ${{ inputs.enable-debug }}
-        run: |
-          echo "Running ${{ inputs.test-suite }} tests against ${{ inputs.environment }}"
-
-          # Simulate test execution
-          if [ "${{ inputs.enable-debug }}" = "true" ]; then
-            echo "Debug mode enabled - verbose output"
-          fi
-
-          # Mock test execution
-          echo "✓ Test 1: API endpoint validation"
-          sleep 1
-          echo "✓ Test 2: Authentication flow"
-          sleep 1
-          echo "✓ Test 3: Data processing"
-          sleep 1
-          echo "✓ Test 4: Integration checks"
-          sleep 1
-
-          echo "All tests passed!"

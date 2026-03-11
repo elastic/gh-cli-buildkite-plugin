@@ -9,9 +9,9 @@ steps:
           workflow-file: "e2e-test.yml"
           workflow-ref: "main"
           workflow-inputs:
-            environment: "staging"
-            test-suite: "all"
-            enable-debug: "true"
+            enable-debug: "false"
+            environment: "production"
+            test-suite: "some"
             version: "1.0.0"
 
   - label: ":github: Trigger E2E Tests (wait)"
@@ -22,9 +22,9 @@ steps:
           workflow-file: "e2e-test.yml"
           workflow-ref: "main"
           workflow-inputs:
+            enable-debug: "true"
             environment: "staging"
             test-suite: "all"
-            enable-debug: "true"
             version: "1.0.0"
           wait: true
 
