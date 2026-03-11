@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Get the directory where this plugin is located
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Source required libraries
+# shellcheck source=lib/workflow.bash
+source "${PLUGIN_DIR}/lib/workflow.bash"
+
+# Get plugin configuration
+WORKFLOW_FILE="${BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_FILE:-}"
+WORKFLOW_REF="${BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_REF:-${BUILDKITE_BRANCH:-main}}"
+WAIT="${BUILDKITE_PLUGIN_GH_CLI_WAIT:-false}"
+
+# Build workflow inputs JSON from Buildkite's flattened environment variables
+build_workflow_inputs_json() {
+  local json_parts=()
+
+  # Find all BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_INPUTS_* variables
+  while IFS='=' read -r key value; do
+    if [[ "${key}" =~ ^BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_INPUTS_(.+)$ ]]; then
+      # Extract the input name and convert from UPPER_CASE to kebab-case
+      local input_name="${BASH_REMATCH[1]}"
+      input_name=$(echo "${input_name}" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
+
+      # Add to JSON parts array
+      json_parts+=("\"${input_name}\": \"${value}\"")
+    fi
+  done < <(env | grep "^BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_INPUTS_")
+
+  # Build JSON object
+  if [[ ${#json_parts[@]} -gt 0 ]]; then
+    local IFS=','
+    echo "{${json_parts[*]}}"
+  fi
+}
+
+# Run workflow if specified
+if [[ -n "${WORKFLOW_FILE}" ]]; then
+  echo "--- :github: Running GitHub workflow"
+
+  # Build workflow inputs JSON from environment variables
+  WORKFLOW_INPUTS_JSON=$(build_workflow_inputs_json)
+
+  run_workflow "${WORKFLOW_FILE}" "${WORKFLOW_REF}" "${WORKFLOW_INPUTS_JSON}" "${WAIT}"
+
+  echo "GitHub workflow execution complete"
+fi
+
+# Execute the original command if one was specified
+if [[ -n "${BUILDKITE_COMMAND:-}" ]]; then
+  eval "$BUILDKITE_COMMAND"
+fi

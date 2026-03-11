@@ -1,0 +1,4 @@
+gh 2.60.0 # This is a comment that contains gh
+# This is another comment that contains gh
+ruby 2.5.3
+nodejs 10.15.0

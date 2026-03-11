@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Set up environment variables for gh CLI
+
+# Installation directory for gh CLI
+export GH_CLI_BIN="${HOME}/.gh-cli/bin"
+
+# Add gh CLI to PATH
+export PATH="${GH_CLI_BIN}:${PATH}"

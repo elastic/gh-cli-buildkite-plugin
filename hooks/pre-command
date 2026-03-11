@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Get the directory where this plugin is located
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Source required libraries
+# shellcheck source=lib/setup.bash
+source "${PLUGIN_DIR}/lib/setup.bash"
+
+echo "--- :github: Setting up GitHub CLI"
+
+# Get plugin configuration
+VERSION="${BUILDKITE_PLUGIN_GH_CLI_VERSION:-}"
+VERSION_FILE="${BUILDKITE_PLUGIN_GH_CLI_VERSION_FILE:-}"
+
+# Determine the version to install
+GH_VERSION=$(get_version_from_input_or_file "${VERSION}" "${VERSION_FILE}")
+
+if [[ -z "${GH_VERSION}" ]]; then
+  echo "Failed to determine gh CLI version" >&2
+  exit 1
+fi
+
+echo "Installing gh CLI version: ${GH_VERSION}"
+
+# Setup gh CLI
+setup "${GH_VERSION}" "${GH_CLI_BIN}"
+
+# Verify gh is available
+if ! command -v gh &> /dev/null; then
+  echo "gh CLI is not available in PATH" >&2
+  exit 1
+fi
+
+# Check for GitHub token authentication
+if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+  echo "Warning: GITHUB_TOKEN is not set. Some gh CLI operations may fail." >&2
+fi
+
+echo "GitHub CLI installation complete"
