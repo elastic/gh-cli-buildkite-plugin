@@ -10,6 +10,10 @@ if [[ -f /usr/lib/bats/bats-assert/load.bash ]]; then
   load '/usr/lib/bats/bats-assert/load.bash'
 fi
 
+if [[ -f /usr/lib/bats/bats-mock/load.bash ]]; then
+  load '/usr/lib/bats/bats-mock/load.bash'
+fi
+
 # If not available, provide basic assert functions
 if ! command -v assert_success &> /dev/null; then
   assert_success() {

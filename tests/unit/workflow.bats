@@ -4,6 +4,16 @@ load '../test_helper'
 
 setup() {
   source "${BATS_TEST_DIRNAME}/../../lib/workflow.bash"
+  export PATH="${BATS_TEST_DIRNAME}:$PATH"
+}
+
+teardown() {
+  # Clean up any stubs
+  if command -v unstub &> /dev/null; then
+    unstub gh || true
+    unstub jq || true
+    unstub sleep || true
+  fi
 }
 
 @test "run_workflow with no workflow file returns success" {
@@ -13,145 +23,114 @@ setup() {
 }
 
 @test "run_workflow builds basic command without inputs" {
-  # Mock gh command
-  gh() {
-    echo "gh $*"
-    return 0
-  }
-  export -f gh
+  stub gh \
+    "workflow run ci.yml --ref main : echo 'Triggered workflow'; exit 0"
 
   run run_workflow "ci.yml" "main" "" "false"
   assert_success
   assert_output --partial "Running GitHub workflow: ci.yml"
   assert_output --partial "Reference: main"
-  assert_output --partial "gh workflow run ci.yml --ref main"
+  assert_output --partial "Triggered workflow"
+
+  unstub gh
 }
 
 @test "run_workflow builds command with JSON inputs" {
-  # Mock gh and jq commands
-  gh() {
-    echo "gh $*"
-    return 0
-  }
-  export -f gh
+  stub jq \
+    "-r to_entries[] | --field \(.key)=\(.value) : echo '--field version=1.0.0'; echo '--field environment=production'; exit 0"
 
-  jq() {
-    if [[ "$*" == *"to_entries"* ]]; then
-      echo '--field version=1.0.0'
-      echo '--field environment=production'
-    fi
-  }
-  export -f jq
+  stub gh \
+    "workflow run ci.yml --ref main --field version=1.0.0 --field environment=production : echo 'Triggered workflow'; exit 0"
 
   local inputs='{"version":"1.0.0","environment":"production"}'
 
   run run_workflow "ci.yml" "main" "$inputs" "false"
   assert_success
   assert_output --partial "Workflow inputs: $inputs"
-  assert_output --partial "--field version=1.0.0"
-  assert_output --partial "--field environment=production"
+  assert_output --partial "Triggered workflow"
+
+  unstub jq
+  unstub gh
 }
 
 @test "run_workflow fails when gh command fails" {
-  # Mock gh command to fail
-  gh() {
-    return 1
-  }
-  export -f gh
+  stub gh \
+    "workflow run ci.yml --ref main : exit 1"
 
   run run_workflow "ci.yml" "main" "" "false"
   assert_failure
   assert_output --partial "Failed to trigger workflow"
+
+  unstub gh
 }
 
 @test "run_workflow calls wait_for_workflow when wait is true" {
-  # Mock gh command
-  gh() {
-    return 0
-  }
-  export -f gh
+  stub gh \
+    "workflow run ci.yml --ref main : echo 'Triggered workflow'; exit 0" \
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId : echo '12345'; exit 0" \
+    "run watch 12345 --exit-status : echo 'Workflow completed'; exit 0" \
+    "run view 12345 : echo 'Run details'; exit 0"
 
-  # Mock wait_for_workflow
-  wait_for_workflow() {
-    echo "wait_for_workflow called with: $1 $2"
-    return 0
-  }
-  export -f wait_for_workflow
+  stub sleep \
+    "5 : exit 0"
 
   run run_workflow "ci.yml" "main" "" "true"
   assert_success
-  assert_output --partial "wait_for_workflow called with: ci.yml main"
+  assert_output --partial "Waiting for workflow to complete"
+  assert_output --partial "Monitoring workflow run ID: 12345"
+  assert_output --partial "Workflow completed successfully"
+
+  unstub gh
+  unstub sleep
 }
 
 @test "wait_for_workflow gets run ID and watches it" {
-  # Mock gh run list
-  gh() {
-    if [[ "$1" == "run" && "$2" == "list" ]]; then
-      echo "12345"
-    elif [[ "$1" == "run" && "$2" == "watch" ]]; then
-      echo "Watching run 12345"
-      return 0
-    elif [[ "$1" == "run" && "$2" == "view" ]]; then
-      echo "Viewing run 12345"
-      return 0
-    fi
-  }
-  export -f gh
+  stub gh \
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId : echo '12345'; exit 0" \
+    "run watch 12345 --exit-status : echo 'Workflow running...'; exit 0" \
+    "run view 12345 : echo 'Workflow details'; exit 0"
 
-  # Mock sleep to avoid delays
-  sleep() {
-    return 0
-  }
-  export -f sleep
+  stub sleep \
+    "5 : exit 0"
 
   run wait_for_workflow "ci.yml" "main"
   assert_success
   assert_output --partial "Waiting for workflow to complete"
   assert_output --partial "Monitoring workflow run ID: 12345"
   assert_output --partial "Workflow completed successfully"
+
+  unstub gh
+  unstub sleep
 }
 
 @test "wait_for_workflow fails when no run ID found" {
-  # Mock gh run list to return empty
-  gh() {
-    if [[ "$1" == "run" && "$2" == "list" ]]; then
-      echo ""
-    fi
-  }
-  export -f gh
+  stub gh \
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId : echo ''; exit 0"
 
-  # Mock sleep
-  sleep() {
-    return 0
-  }
-  export -f sleep
+  stub sleep \
+    "5 : exit 0"
 
   run wait_for_workflow "ci.yml" "main"
   assert_failure
   assert_output --partial "Could not find workflow run ID"
+
+  unstub gh
+  unstub sleep
 }
 
 @test "wait_for_workflow fails when workflow run fails" {
-  # Mock gh commands
-  gh() {
-    if [[ "$1" == "run" && "$2" == "list" ]]; then
-      echo "12345"
-    elif [[ "$1" == "run" && "$2" == "watch" ]]; then
-      return 1  # Simulate workflow failure
-    elif [[ "$1" == "run" && "$2" == "view" ]]; then
-      echo "Run failed"
-      return 0
-    fi
-  }
-  export -f gh
+  stub gh \
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId : echo '12345'; exit 0" \
+    "run watch 12345 --exit-status : exit 1" \
+    "run view 12345 : echo 'Workflow failed'; exit 0"
 
-  # Mock sleep
-  sleep() {
-    return 0
-  }
-  export -f sleep
+  stub sleep \
+    "5 : exit 0"
 
   run wait_for_workflow "ci.yml" "main"
   assert_failure
   assert_output --partial "Workflow run failed or was cancelled"
+
+  unstub gh
+  unstub sleep
 }

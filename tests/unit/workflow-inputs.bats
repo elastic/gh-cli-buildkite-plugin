@@ -3,9 +3,21 @@
 load '../test_helper'
 
 setup() {
-  # Source the command hook to get build_workflow_inputs_json function
-  # We need to extract just the function, not execute the whole script
+  # Extract and source just the build_workflow_inputs_json function
+  # shellcheck disable=SC1090
   source <(sed -n '/^build_workflow_inputs_json()/,/^}/p' "${BATS_TEST_DIRNAME}/../../hooks/command")
+
+  # Clean up any existing workflow input env vars
+  for var in $(compgen -e | grep "^BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_INPUTS_"); do
+    unset "$var"
+  done
+}
+
+teardown() {
+  # Clean up env vars after each test
+  for var in $(compgen -e | grep "^BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_INPUTS_"); do
+    unset "$var"
+  done
 }
 
 @test "Build workflow inputs JSON from flattened env vars" {
@@ -36,9 +48,6 @@ setup() {
 }
 
 @test "Build workflow inputs JSON with no inputs returns empty" {
-  # Ensure no workflow input env vars are set
-  unset ${!BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_INPUTS_*}
-
   run build_workflow_inputs_json
   assert_success
   assert_output ""
@@ -61,7 +70,7 @@ setup() {
 }
 
 @test "Build workflow inputs JSON with special characters" {
-  export BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_INPUTS_MESSAGE="Hello World! Special chars: @#$"
+  export BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_INPUTS_MESSAGE="Hello World! Special chars: @#\$"
 
   run build_workflow_inputs_json
   assert_success
@@ -80,4 +89,14 @@ setup() {
   # Both should be included, even if empty
   echo "$output" | jq -e '.optional == ""'
   echo "$output" | jq -e '.required == "value"'
+}
+
+@test "Build workflow inputs JSON with multiple underscores" {
+  export BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_INPUTS_LONG_VAR_NAME="test"
+
+  run build_workflow_inputs_json
+  assert_success
+
+  # Verify conversion: LONG_VAR_NAME -> long-var-name
+  echo "$output" | jq -e '."long-var-name" == "test"'
 }
