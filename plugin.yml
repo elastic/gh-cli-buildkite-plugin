@@ -6,7 +6,7 @@ requirements:
   - curl
   - bash
   - tar
-  - git
+  - jq
   - buildkite-agent
 configuration:
   properties:
