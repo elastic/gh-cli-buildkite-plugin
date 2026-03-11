@@ -68,7 +68,10 @@ download_gh_cli() {
   # Create temporary directory for download
   local temp_dir
   temp_dir=$(mktemp -d)
-  trap 'rm -rf "${temp_dir}"' EXIT
+  # Use double quotes so temp_dir is expanded now (at trap-set time),
+  # not later when the variable may be out of scope.
+  # shellcheck disable=SC2064
+  trap "rm -rf \"${temp_dir}\"" EXIT
 
   # Download the archive
   if ! curl -fsSL "${download_url}" -o "${temp_dir}/${asset_name}"; then
