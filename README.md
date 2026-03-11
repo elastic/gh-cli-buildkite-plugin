@@ -100,6 +100,18 @@ steps:
           version-file: ".tool-versions"
 ```
 
+### 🔌 Plugin Composability
+
+Work seamlessly with dependency plugins like `elastic/vault-github-token`:
+
+```yaml
+plugins:
+  - elastic/vault-github-token#v0.1.0:  # Sets GITHUB_TOKEN
+  - elastic/gh-cli#main: # Uses GITHUB_TOKEN
+      version: "2.62.0"
+      workflow-file: "deploy.yml"
+```
+
 ## Configuration
 
 ### `version` (optional, string)
