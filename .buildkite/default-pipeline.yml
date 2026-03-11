@@ -28,6 +28,14 @@ steps:
             version: "1.0.0"
           wait: true
 
+  - label: ":github: Use GitHub CLI"
+    plugins:
+      - elastic/gh-cli#${BUILDKITE_COMMIT}:
+          version: "2.62.0"
+    command: |
+      gh --version
+      gh repo view
+
   - label: ":test_tube: Run Plugin Unit Tests"
     commands:
       - make test

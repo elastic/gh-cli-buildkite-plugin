@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Get the directory where this plugin is located
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Source required libraries
+# shellcheck source=lib/workflow.bash
+source "${PLUGIN_DIR}/lib/workflow.bash"
+
+# Get plugin configuration
+WORKFLOW_FILE="${BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_FILE:-}"
+WORKFLOW_REF="${BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_REF:-${BUILDKITE_BRANCH:-main}}"
+WORKFLOW_INPUTS="${BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_INPUTS:-}"
+WAIT="${BUILDKITE_PLUGIN_GH_CLI_WAIT:-false}"
+
+# Run workflow if specified
+if [[ -n "${WORKFLOW_FILE}" ]]; then
+  echo "--- :github: Running GitHub workflow"
+
+  # Convert workflow inputs from plugin format to JSON if provided
+  WORKFLOW_INPUTS_JSON=""
+  if [[ -n "${WORKFLOW_INPUTS}" ]]; then
+    # The workflow inputs come as a JSON string from Buildkite
+    WORKFLOW_INPUTS_JSON="${WORKFLOW_INPUTS}"
+  fi
+
+  run_workflow "${WORKFLOW_FILE}" "${WORKFLOW_REF}" "${WORKFLOW_INPUTS_JSON}" "${WAIT}"
+
+  echo "GitHub workflow execution complete"
+fi

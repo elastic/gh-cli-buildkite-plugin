@@ -8,18 +8,12 @@ PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Source required libraries
 # shellcheck source=lib/setup.bash
 source "${PLUGIN_DIR}/lib/setup.bash"
-# shellcheck source=lib/workflow.bash
-source "${PLUGIN_DIR}/lib/workflow.bash"
 
 echo "--- :github: Setting up GitHub CLI"
 
 # Get plugin configuration
 VERSION="${BUILDKITE_PLUGIN_GH_CLI_VERSION:-}"
 VERSION_FILE="${BUILDKITE_PLUGIN_GH_CLI_VERSION_FILE:-}"
-WORKFLOW_FILE="${BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_FILE:-}"
-WORKFLOW_REF="${BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_REF:-${BUILDKITE_BRANCH:-main}}"
-WORKFLOW_INPUTS="${BUILDKITE_PLUGIN_GH_CLI_WORKFLOW_INPUTS:-}"
-WAIT="${BUILDKITE_PLUGIN_GH_CLI_WAIT:-false}"
 
 # Determine the version to install
 GH_VERSION=$(get_version_from_input_or_file "${VERSION}" "${VERSION_FILE}")
@@ -48,22 +42,4 @@ if [[ -z "${GITHUB_TOKEN:-}" ]]; then
   echo "Warning: GITHUB_TOKEN is not set. Some gh CLI operations may fail." >&2
 fi
 
-# Configure git if needed
-git config --global user.email "buildkite@elastic.co" || true
-git config --global user.name "Buildkite Agent" || true
-
-# Run workflow if specified
-if [[ -n "${WORKFLOW_FILE}" ]]; then
-  echo "--- :github: Running GitHub workflow"
-
-  # Convert workflow inputs from plugin format to JSON if provided
-  WORKFLOW_INPUTS_JSON=""
-  if [[ -n "${WORKFLOW_INPUTS}" ]]; then
-    # The workflow inputs come as a JSON string from Buildkite
-    WORKFLOW_INPUTS_JSON="${WORKFLOW_INPUTS}"
-  fi
-
-  run_workflow "${WORKFLOW_FILE}" "${WORKFLOW_REF}" "${WORKFLOW_INPUTS_JSON}" "${WAIT}"
-fi
-
-echo "GitHub CLI setup complete"
+echo "GitHub CLI installation complete"
