@@ -17,4 +17,3 @@ steps:
         - "**/*"
       exclude:
         - "catalog-info.yaml"
-        - "renovate.json"
