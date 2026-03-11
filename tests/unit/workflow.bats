@@ -36,8 +36,9 @@ teardown() {
 }
 
 @test "run_workflow builds command with JSON inputs" {
+  # Stub jq to return the field arguments
   stub jq \
-    "-r to_entries[] | --field \(.key)=\(.value) : echo '--field version=1.0.0'; echo '--field environment=production'; exit 0"
+    "-r * : echo '--field version=1.0.0'; echo '--field environment=production'; exit 0"
 
   stub gh \
     "workflow run ci.yml --ref main --field version=1.0.0 --field environment=production : echo 'Triggered workflow'; exit 0"

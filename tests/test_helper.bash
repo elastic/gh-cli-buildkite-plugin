@@ -1,18 +1,7 @@
 #!/usr/bin/env bash
 
 # Load bats-support and bats-assert if available
-# These are typically installed in the buildkite/plugin-tester image
-if [[ -f /usr/lib/bats/bats-support/load.bash ]]; then
-  load '/usr/lib/bats/bats-support/load.bash'
-fi
-
-if [[ -f /usr/lib/bats/bats-assert/load.bash ]]; then
-  load '/usr/lib/bats/bats-assert/load.bash'
-fi
-
-if [[ -f /usr/lib/bats/bats-mock/load.bash ]]; then
-  load '/usr/lib/bats/bats-mock/load.bash'
-fi
+load "$BATS_PLUGIN_PATH/load.bash"
 
 # If not available, provide basic assert functions
 if ! command -v assert_success &> /dev/null; then
