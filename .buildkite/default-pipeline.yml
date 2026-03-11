@@ -30,6 +30,7 @@ steps:
 
   - label: ":github: Use GitHub CLI"
     plugins:
+      - elastic/vault-github-token#v0.1.0:
       - elastic/gh-cli#${BUILDKITE_COMMIT}:
           version: "2.62.0"
     command: |
