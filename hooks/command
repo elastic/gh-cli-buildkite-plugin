@@ -30,3 +30,8 @@ if [[ -n "${WORKFLOW_FILE}" ]]; then
 
   echo "GitHub workflow execution complete"
 fi
+
+# Execute the original command if one was specified
+if [[ -n "${BUILDKITE_COMMAND:-}" ]]; then
+  eval "$BUILDKITE_COMMAND"
+fi
