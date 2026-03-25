@@ -67,8 +67,9 @@ teardown() {
 
 @test "run_workflow calls wait_for_workflow when wait is true" {
   stub gh \
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId//empty : echo '11111'; exit 0" \
     "workflow run ci.yml --ref main : echo 'Triggered workflow'; exit 0" \
-    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId : echo '12345'; exit 0" \
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId//empty : echo '12345'; exit 0" \
     "run watch 12345 --exit-status : echo 'Workflow completed'; exit 0" \
     "run view 12345 : echo 'Run details'; exit 0"
 
@@ -87,7 +88,7 @@ teardown() {
 
 @test "wait_for_workflow gets run ID and watches it" {
   stub gh \
-    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId : echo '12345'; exit 0" \
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId//empty : echo '12345'; exit 0" \
     "run watch 12345 --exit-status : echo 'Workflow running...'; exit 0" \
     "run view 12345 : echo 'Workflow details'; exit 0"
 
@@ -106,12 +107,12 @@ teardown() {
 
 @test "wait_for_workflow fails when no run ID found" {
   stub gh \
-    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId : echo ''; exit 0"
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId//empty : echo ''; exit 0"
 
   stub sleep \
     "5 : exit 0"
 
-  run wait_for_workflow "ci.yml" "main"
+  WORKFLOW_WAIT_MAX_ATTEMPTS=1 run wait_for_workflow "ci.yml" "main"
   assert_failure
   assert_output --partial "Could not find workflow run ID"
 
@@ -121,7 +122,7 @@ teardown() {
 
 @test "wait_for_workflow fails when workflow run fails" {
   stub gh \
-    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId : echo '12345'; exit 0" \
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId//empty : echo '12345'; exit 0" \
     "run watch 12345 --exit-status : exit 1" \
     "run view 12345 : echo 'Workflow failed'; exit 0"
 
@@ -131,6 +132,27 @@ teardown() {
   run wait_for_workflow "ci.yml" "main"
   assert_failure
   assert_output --partial "Workflow run failed or was cancelled"
+
+  unstub gh
+  unstub sleep
+}
+
+@test "wait_for_workflow retries until a new run ID appears" {
+  stub gh \
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId//empty : echo '11111'; exit 0" \
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId//empty : echo '12345'; exit 0" \
+    "run watch 12345 --exit-status : echo 'Workflow completed'; exit 0" \
+    "run view 12345 : echo 'Run details'; exit 0"
+
+  stub sleep \
+    "5 : exit 0" \
+    "5 : exit 0"
+
+  run wait_for_workflow "ci.yml" "main" "11111"
+  assert_success
+  assert_output --partial "Waiting for workflow to complete"
+  assert_output --partial "Monitoring workflow run ID: 12345"
+  assert_output --partial "Workflow completed successfully"
 
   unstub gh
   unstub sleep

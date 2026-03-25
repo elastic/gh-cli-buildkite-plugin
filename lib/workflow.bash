@@ -33,6 +33,12 @@ run_workflow() {
     done < <(echo "${workflow_inputs}" | jq -r 'to_entries[] | "--field \(.key)=\(.value)"')
   fi
 
+  # Capture the most recent run ID before triggering so we can detect the new run reliably
+  local prev_run_id=""
+  if [[ "${should_wait}" == "true" ]]; then
+    prev_run_id=$(gh run list --workflow="${workflow_file}" --branch="${workflow_ref}" --limit=1 --json databaseId --jq '.[0].databaseId//empty' 2>/dev/null || true)
+  fi
+
   # Execute the workflow
   echo "Executing: ${gh_cmd}"
   if ! eval "${gh_cmd}"; then
@@ -44,7 +50,7 @@ run_workflow() {
 
   # Wait for workflow to complete if requested
   if [[ "${should_wait}" == "true" ]]; then
-    wait_for_workflow "${workflow_file}" "${workflow_ref}"
+    wait_for_workflow "${workflow_file}" "${workflow_ref}" "${prev_run_id}"
   fi
 }
 
@@ -52,15 +58,26 @@ run_workflow() {
 wait_for_workflow() {
   local workflow_file="${1}"
   local workflow_ref="${2}"
+  local prev_run_id="${3:-}"
 
   echo "Waiting for workflow to complete..."
 
-  # Give the workflow a moment to start
-  sleep 5
+  # Poll for the new workflow run, retrying until a run different from prev_run_id appears
+  local run_id=""
+  local max_attempts="${WORKFLOW_WAIT_MAX_ATTEMPTS:-12}"
+  local attempt=0
 
-  # Get the most recent run ID for this workflow
-  local run_id
-  run_id=$(gh run list --workflow="${workflow_file}" --branch="${workflow_ref}" --limit=1 --json databaseId --jq '.[0].databaseId')
+  while [[ -z "${run_id}" && ${attempt} -lt ${max_attempts} ]]; do
+    sleep 5
+    attempt=$((attempt + 1))
+
+    local latest_run_id
+    latest_run_id=$(gh run list --workflow="${workflow_file}" --branch="${workflow_ref}" --limit=1 --json databaseId --jq '.[0].databaseId//empty')
+
+    if [[ -n "${latest_run_id}" && "${latest_run_id}" != "${prev_run_id}" ]]; then
+      run_id="${latest_run_id}"
+    fi
+  done
 
   if [[ -z "${run_id}" ]]; then
     echo "Could not find workflow run ID" >&2
