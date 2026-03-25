@@ -78,12 +78,28 @@ teardown() {
 
   run run_workflow "ci.yml" "main" "" "true"
   assert_success
+  assert_output --partial "Triggered workflow"
   assert_output --partial "Waiting for workflow to complete"
   assert_output --partial "Monitoring workflow run ID: 12345"
   assert_output --partial "Workflow completed successfully"
 
   unstub gh
   unstub sleep
+}
+
+@test "run_workflow uses direct run ID when gh >= 2.87.0 prints run URL" {
+  stub gh \
+    "run list --workflow=ci.yml --branch=main --limit=1 --json databaseId --jq .[0].databaseId//empty : echo '11111'; exit 0" \
+    "workflow run ci.yml --ref main : echo 'https://github.com/owner/repo/actions/runs/12345'; exit 0" \
+    "run watch 12345 --exit-status : echo 'Workflow completed'; exit 0" \
+    "run view 12345 : echo 'Run details'; exit 0"
+
+  run run_workflow "ci.yml" "main" "" "true"
+  assert_success
+  assert_output --partial "Monitoring workflow run ID: 12345"
+  assert_output --partial "Workflow completed successfully"
+
+  unstub gh
 }
 
 @test "wait_for_workflow gets run ID and watches it" {
@@ -135,6 +151,19 @@ teardown() {
 
   unstub gh
   unstub sleep
+}
+
+@test "wait_for_workflow uses direct run ID without polling" {
+  stub gh \
+    "run watch 12345 --exit-status : echo 'Workflow completed'; exit 0" \
+    "run view 12345 : echo 'Run details'; exit 0"
+
+  run wait_for_workflow "ci.yml" "main" "" "12345"
+  assert_success
+  assert_output --partial "Monitoring workflow run ID: 12345"
+  assert_output --partial "Workflow completed successfully"
+
+  unstub gh
 }
 
 @test "wait_for_workflow retries until a new run ID appears" {
