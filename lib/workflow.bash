@@ -35,16 +35,36 @@ run_workflow() {
 
   # Execute the workflow
   echo "Executing: ${gh_cmd}"
-  if ! eval "${gh_cmd}"; then
-    echo "Failed to trigger workflow" >&2
-    return 1
-  fi
 
-  echo "Workflow triggered successfully"
-
-  # Wait for workflow to complete if requested
   if [[ "${should_wait}" == "true" ]]; then
-    wait_for_workflow "${workflow_file}" "${workflow_ref}"
+    # Capture the most recent run ID before triggering (fallback for gh < 2.87.0)
+    local prev_run_id=""
+    prev_run_id=$(gh run list --workflow="${workflow_file}" --branch="${workflow_ref}" --limit=1 --json databaseId --jq '.[0].databaseId//empty' 2>/dev/null || true)
+
+    # Capture gh output to extract run URL (available in gh >= 2.87.0)
+    local gh_output=""
+    if ! gh_output=$(eval "${gh_cmd}" 2>&1); then
+      echo "Failed to trigger workflow" >&2
+      echo "${gh_output}" >&2
+      return 1
+    fi
+    echo "${gh_output}"
+
+    echo "Workflow triggered successfully"
+
+    # Try to extract run ID directly from gh output (gh >= 2.87.0 prints the run URL)
+    local direct_run_id=""
+    if [[ "${gh_output}" =~ actions/runs/([0-9]+) ]]; then
+      direct_run_id="${BASH_REMATCH[1]}"
+    fi
+
+    wait_for_workflow "${workflow_file}" "${workflow_ref}" "${prev_run_id}" "${direct_run_id}"
+  else
+    if ! eval "${gh_cmd}"; then
+      echo "Failed to trigger workflow" >&2
+      return 1
+    fi
+    echo "Workflow triggered successfully"
   fi
 }
 
@@ -52,15 +72,30 @@ run_workflow() {
 wait_for_workflow() {
   local workflow_file="${1}"
   local workflow_ref="${2}"
+  local prev_run_id="${3:-}"
+  local direct_run_id="${4:-}"  # run ID from gh output (gh >= 2.87.0)
 
   echo "Waiting for workflow to complete..."
 
-  # Give the workflow a moment to start
-  sleep 5
+  local run_id="${direct_run_id}"
 
-  # Get the most recent run ID for this workflow
-  local run_id
-  run_id=$(gh run list --workflow="${workflow_file}" --branch="${workflow_ref}" --limit=1 --json databaseId --jq '.[0].databaseId')
+  if [[ -z "${run_id}" ]]; then
+    # Poll for the new workflow run, retrying until a run different from prev_run_id appears
+    local max_attempts="${WORKFLOW_WAIT_MAX_ATTEMPTS:-12}"
+    local attempt=0
+
+    while [[ -z "${run_id}" && ${attempt} -lt ${max_attempts} ]]; do
+      sleep 5
+      attempt=$((attempt + 1))
+
+      local latest_run_id
+      latest_run_id=$(gh run list --workflow="${workflow_file}" --branch="${workflow_ref}" --limit=1 --json databaseId --jq '.[0].databaseId//empty')
+
+      if [[ -n "${latest_run_id}" && "${latest_run_id}" != "${prev_run_id}" ]]; then
+        run_id="${latest_run_id}"
+      fi
+    done
+  fi
 
   if [[ -z "${run_id}" ]]; then
     echo "Could not find workflow run ID" >&2
