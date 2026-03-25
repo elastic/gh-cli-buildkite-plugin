@@ -23,8 +23,8 @@ Simply install the GitHub CLI without running any workflows:
 steps:
   - label: ":github: Use GitHub CLI"
     plugins:
-      - elastic/gh-cli#main:
-          version: "2.62.0"
+      - elastic/gh-cli#v0.1.0:
+          version: "2.88.0"
     command: |
       gh --version
       gh repo view
@@ -38,8 +38,8 @@ Install GitHub CLI and trigger a workflow:
 steps:
   - label: ":github: Trigger deployment"
     plugins:
-      - elastic/gh-cli#main:
-          version: "2.62.0"
+      - elastic/gh-cli#v0.1.0:
+          version: "2.88.0"
           workflow-file: "deploy.yml"
           workflow-ref: "main"
           workflow-inputs:
@@ -57,8 +57,8 @@ Trigger a workflow and wait for it to complete:
 steps:
   - label: ":github: Run tests and wait"
     plugins:
-      - elastic/gh-cli#main:
-          version: "2.62.0"
+      - elastic/gh-cli#v0.1.0:
+          version: "2.88.0"
           workflow-file: "ci.yml"
           workflow-ref: ${BUILDKITE_COMMIT}
           wait: true
@@ -76,7 +76,7 @@ Specify the version in a file:
 steps:
   - label: ":github: Use version from file"
     plugins:
-      - elastic/gh-cli#main:
+      - elastic/gh-cli#v0.1.0:
           version-file: ".gh-version"
 ```
 
@@ -86,8 +86,8 @@ If you use asdf, you can specify the version in `.tool-versions`:
 
 ```
 # .tool-versions
-gh 2.62.0
-node 18.0.0
+gh 2.88.0
+node 24.0.0
 ```
 
 Then reference it in your pipeline:
@@ -96,7 +96,7 @@ Then reference it in your pipeline:
 steps:
   - label: ":github: Use asdf version"
     plugins:
-      - elastic/gh-cli#main:
+      - elastic/gh-cli#v0.1.0:
           version-file: ".tool-versions"
 ```
 
@@ -107,8 +107,8 @@ Work seamlessly with dependency plugins like `elastic/vault-github-token`:
 ```yaml
 plugins:
   - elastic/vault-github-token#v0.1.0:  # Sets GITHUB_TOKEN
-  - elastic/gh-cli#main: # Uses GITHUB_TOKEN
-      version: "2.62.0"
+  - elastic/gh-cli#v0.1.0: # Uses GITHUB_TOKEN
+      version: "2.88.0"
       workflow-file: "deploy.yml"
 ```
 
@@ -192,8 +192,8 @@ The plugin determines which version to install using the following precedence:
 steps:
   - label: ":github: Run matrix tests"
     plugins:
-      - elastic/gh-cli#main:
-          version: "2.62.0"
+      - elastic/gh-cli#v0.1.0:
+          version: "2.88.0"
           workflow-file: "matrix-tests.yml"
           workflow-ref: ${BUILDKITE_COMMIT}
           wait: true
@@ -210,8 +210,8 @@ steps:
 steps:
   - label: ":rocket: Deploy to staging"
     plugins:
-      - elastic/gh-cli#main:
-          version: "2.62.0"
+      - elastic/gh-cli#v0.1.0:
+          version: "2.88.0"
           workflow-file: "deploy.yml"
           workflow-ref: "main"
           workflow-inputs:
@@ -224,8 +224,8 @@ steps:
 
   - label: ":rocket: Deploy to production"
     plugins:
-      - elastic/gh-cli#main:
-          version: "2.62.0"
+      - elastic/gh-cli#v0.1.0:
+          version: "2.88.0"
           workflow-file: "deploy.yml"
           workflow-ref: "main"
           wait: true
@@ -272,7 +272,7 @@ git clone https://github.com/elastic/gh-cli-buildkite-plugin.git
 cd gh-cli-buildkite-plugin
 
 # Set required environment variables
-export BUILDKITE_PLUGIN_GH_CLI_VERSION="2.62.0"
+export BUILDKITE_PLUGIN_GH_CLI_VERSION="2.88.0"
 export GITHUB_TOKEN="your-token"
 
 # Run the pre-command hook
