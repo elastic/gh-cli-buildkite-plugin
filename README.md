@@ -23,7 +23,7 @@ Simply install the GitHub CLI without running any workflows:
 steps:
   - label: ":github: Use GitHub CLI"
     plugins:
-      - elastic/gh-cli#v0.1.0:
+      - elastic/gh-cli#v0.1.1:
           version: "2.88.0"
     command: |
       gh --version
@@ -38,7 +38,7 @@ Install GitHub CLI and trigger a workflow:
 steps:
   - label: ":github: Trigger deployment"
     plugins:
-      - elastic/gh-cli#v0.1.0:
+      - elastic/gh-cli#v0.1.1:
           version: "2.88.0"
           workflow-file: "deploy.yml"
           workflow-ref: "main"
@@ -57,7 +57,7 @@ Trigger a workflow and wait for it to complete:
 steps:
   - label: ":github: Run tests and wait"
     plugins:
-      - elastic/gh-cli#v0.1.0:
+      - elastic/gh-cli#v0.1.1:
           version: "2.88.0"
           workflow-file: "ci.yml"
           workflow-ref: ${BUILDKITE_COMMIT}
@@ -76,7 +76,7 @@ Specify the version in a file:
 steps:
   - label: ":github: Use version from file"
     plugins:
-      - elastic/gh-cli#v0.1.0:
+      - elastic/gh-cli#v0.1.1:
           version-file: ".gh-version"
 ```
 
@@ -96,7 +96,7 @@ Then reference it in your pipeline:
 steps:
   - label: ":github: Use asdf version"
     plugins:
-      - elastic/gh-cli#v0.1.0:
+      - elastic/gh-cli#v0.1.1:
           version-file: ".tool-versions"
 ```
 
@@ -107,7 +107,7 @@ Work seamlessly with dependency plugins like `elastic/vault-github-token`:
 ```yaml
 plugins:
   - elastic/vault-github-token#v0.1.0:  # Sets GITHUB_TOKEN
-  - elastic/gh-cli#v0.1.0: # Uses GITHUB_TOKEN
+  - elastic/gh-cli#v0.1.1: # Uses GITHUB_TOKEN
       version: "2.88.0"
       workflow-file: "deploy.yml"
 ```
@@ -192,7 +192,7 @@ The plugin determines which version to install using the following precedence:
 steps:
   - label: ":github: Run matrix tests"
     plugins:
-      - elastic/gh-cli#v0.1.0:
+      - elastic/gh-cli#v0.1.1:
           version: "2.88.0"
           workflow-file: "matrix-tests.yml"
           workflow-ref: ${BUILDKITE_COMMIT}
@@ -210,7 +210,7 @@ steps:
 steps:
   - label: ":rocket: Deploy to staging"
     plugins:
-      - elastic/gh-cli#v0.1.0:
+      - elastic/gh-cli#v0.1.1:
           version: "2.88.0"
           workflow-file: "deploy.yml"
           workflow-ref: "main"
@@ -224,7 +224,7 @@ steps:
 
   - label: ":rocket: Deploy to production"
     plugins:
-      - elastic/gh-cli#v0.1.0:
+      - elastic/gh-cli#v0.1.1:
           version: "2.88.0"
           workflow-file: "deploy.yml"
           workflow-ref: "main"
